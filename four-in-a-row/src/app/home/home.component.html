@@ -3,26 +3,16 @@
     <div class="mdl-card mdl-shadow--2dp flc-card-main">
       <div class="flc-layout--center" style="padding: 50px 0;">
         <div class="flc-game-board">
-          <div class="board-col">
-            <!-- PIECES -->
-          </div>
-          <div class="board-col">
-            <!-- PIECES -->
-          </div>
-          <div class="board-col">
-            <!-- PIECES -->
-          </div>
-          <div class="board-col">
-            <!-- PIECES -->
-          </div>
-          <div class="board-col">
-            <!-- PIECES -->
-          </div>
-          <div class="board-col">
-            <!-- PIECES -->
-          </div>
-          <div class="board-col">
-            <!-- PIECES -->
+          <div class="board-col" *ngFor="let rows of board; let i = index" (click)="addPiece(i)">
+            <span
+              class="flc-game-piece"
+              *ngFor="let cols of board[i]; let j = index"
+              [ngClass]="{
+                'winner': board[i][j] === winner,
+                'player-one': board[i][j] === playerOne,
+                'player-two': board[i][j] === playerTwo
+              }"
+              [hidden]="board[i][j] === 0"></span>
           </div>
         </div>
       </div>
