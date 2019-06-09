@@ -12,6 +12,7 @@ import { createEventEmitter } from './event_emitter';
  *
  * @param client
  */
+
 const createDownstreamObservable = (client: websocket.w3cwebsocket): Observable<any> => {
   const { addEventHandler } = createEventEmitter(client);
   const connection = Observable.create((observer) => {
@@ -22,6 +23,7 @@ const createDownstreamObservable = (client: websocket.w3cwebsocket): Observable<
       } catch (e) { }
       observer.next({ data, event: ev });
     };
+
     const unsubs = [
       addEventHandler('onopen', next),
       addEventHandler('onmessage', next),
@@ -67,17 +69,19 @@ export const createClient = (host: string, port: number) => {
           backlog.delete(lazySend);
         };
         backlog.add(lazySend);
+
         return;
       }
+
       client.send(encodedPayload);
     };
 
     const join = (channelName: string, channelConfig = { maxSize: Number.MAX_SAFE_INTEGER }) => {
       const userLeft = new Subject();
       const channelDownstream = downstream.pipe(
-        filter(resp => (
-          resp.data && resp.data.channel.name === channelName
-        )),
+        filter(resp => {
+          return resp.data && resp.data.channel && resp.data.channel.name === channelName
+        }),
         takeUntil(userLeft)
       );
 
@@ -100,6 +104,7 @@ export const createClient = (host: string, port: number) => {
          * @param channelName string
          * @param message any
          */
+
         send: message => send(channelName, message),
         /**
          * Leave channel.

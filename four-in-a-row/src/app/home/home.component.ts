@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import {Component, ElementRef, OnDestroy, OnInit, ViewChild} from '@angular/core';
 
 import { createClient } from '../../../lib/websocketConnector';
 import { generateMatrixModel, Matrix } from '../../../lib/game-utilities/matrix';
@@ -9,7 +9,14 @@ import { checkFour } from '../../../lib/game-utilities/check-four';
   templateUrl: './home.component.html',
   styleUrls: ['./home.component.scss']
 })
-export class HomeComponent implements OnInit {
+export class HomeComponent implements OnInit, OnDestroy {
+
+  @ViewChild('dialog') dialog: ElementRef;
+
+  private connection: any;
+  private client: any;
+  private pinging: any;
+  private channel: any;
 
   private board: Matrix;
   private rows: number = 6;
@@ -17,34 +24,45 @@ export class HomeComponent implements OnInit {
   private playerOne:number = 1;
   private playerTwo:number = 2;
   private currentPlayer: number = this.playerOne;
+  private myPlayer: number = this.playerOne;
   private winner: number = 0;
+  private username: string = '';
+  private gameName: string = '';
+  private games: any = [];
+  private selectedGame: string = '';
+  private users: any = [];
+  private gameStarted: boolean = false;
 
   constructor() { }
 
   addPiece(colIndex) {
 
-    const cell = this.findLastEmptyCell(colIndex);
-    const winner = checkFour(this.currentPlayer, this.board, [colIndex, cell]);
+    if (this.gameStarted && this.currentPlayer == this.myPlayer) {
 
-    if (!winner) {
-      this.currentPlayer = this.currentPlayer == this.playerOne ? this.playerTwo : this.playerOne;
-      this.board[colIndex][cell] = this.currentPlayer;
+      const cell = this.findLastEmptyCell(colIndex);
+
+      const winner = checkFour(this.currentPlayer, this.board, [colIndex, cell]);
+
+      if (!winner) {
+        this.currentPlayer = this.currentPlayer == this.playerOne ? this.playerTwo : this.playerOne;
+        this.board[colIndex][cell] = this.currentPlayer;
+        this.channel.send({type: 'UPDATE_BOARD', payload: { board: this.board }})
+      } else {
+        this.winner = winner.playerId;
+        alert('Game has ended Player ' + winner.playerId + ' has won!')
+      }
     } else {
-      this.winner = winner.playerId;
-      alert('Game has ended Player ' + winner.playerId + ' has won!')
+      alert('Game has not begun yet');
     }
 
-    // console.log(cell)
-    // console.log(this.board)
-    // console.log(this.currentPlayer);
-
+    this.channel.send({type: 'CURRENT_PLAYER', payload: { currentPlayer: this.currentPlayer }})
   }
 
   findLastEmptyCell(colIndex) {
-    const cells = this.board[colIndex];
+    const col = this.board[colIndex];
 
-    for (let i = cells.length - 1; i >= 0; i--) {
-      const cell = cells[i];
+    for (let i = 0; i < col.length; i++) {
+      const cell = col[i];
       if (cell === 0) {
         return i;
       }
@@ -53,56 +71,76 @@ export class HomeComponent implements OnInit {
     return null;
   }
 
+  startGame() {
+    this.channel.send({type: 'START_GAME', payload: {}})
+  }
+
+  createChannel(gameName) {
+    if(gameName) this.gameName = gameName
+    this.channel = this.connection.join(this.gameName);
+
+    this.channel.downstream.subscribe({
+      next: ({data}) => {
+
+        if (data.error) {
+          console.log('# Something went wrong', data.error);
+          return;
+        }
+
+        if (data.type == 'START_GAME') {
+          this.gameStarted = data.message;
+        }
+
+        if (data.type == 'CURRENT_PLAYER') {
+          this.currentPlayer = data.message.currentPlayer;
+        }
+
+        if (data.type == 'UPDATE_BOARD') {
+          console.log('========= UPDATE_BOARD ==========')
+          console.log(data.message.board)
+          this.board = data.message.board;
+        }
+
+        if (data.type == 'GET_CHANNELS') {
+          this.games = data.message.filter(game => game !== this.gameName);
+          this.users = data.channel.users;
+        }
+      },
+      error: err => console.log('# Something went wrong', err),
+      complete: () => console.log('# Complete')
+    });
+  }
+
+  joinGame() {
+    this.dialog.nativeElement.showModal();
+  }
+
+  joinUser() {
+      this.channel.leave();
+      this.createChannel(this.selectedGame);
+      this.dialog.nativeElement.close();
+      this.myPlayer = this.playerTwo;
+  }
+
   ngOnInit() {
     this.board = generateMatrixModel(this.cols, this.rows);
-//
-// // 2) Create a client object
-// // -------------------------
-// // This will not create a WS connection, but will only
-// // return an object that controls the opening and closing
-// // of the connection.
-//     const client = createClient('localhost', 4000);
-//
-// // 3) At a later point in the implementation we can use the
-// // -------------------------
-// // client object to open a connection.
-// // I.e we now have an active Websocket open
-// // You can pass in an optional meta object that will be attached to all messages,
-// // a possible use case is an object identifying the user on the connection.
-//     const connection = client.connect({ name: 'George' });
-//
-// // 4) Join a channel (ch1) and subscribe to downstream messages.
-// // -------------------------
-// // If a channel does not exist one will be created.
-// // The `downstream` object is of type <Observable>
-//     const channel = connection.join('ch1');
-//     channel.downstream.subscribe({
-//       next: ({ data }) => {
-//         if (data.error) {
-//           console.log('# Something went wrong', data.error);
-//           return;
-//         }
-//         if (data.message === 'ping') {
-//           console.log('# Sending pong');
-//           channel.send('pong');
-//         }
-//         if (data.message === 'pong') {
-//           console.log('# Received pong', data);
-//         }
-//       },
-//       error: err => console.log('# Something went wrong', err),
-//       complete: () => console.log('# Complete')
-//     });
-//
-// // Ping other connected clients every 5 sec.
-//     const pinging = setInterval(() => channel.send('ping'), 5000);
-//
-// // Leave channel after 20 sec.
-//     setTimeout(() => {
-//       clearInterval(pinging);
-//       channel.leave();
-//     }, 20000);
-//
+    this.client = createClient('localhost', 4000);
+    let timestamp = new Date().getTime()
+    this.gameName = 'game_' + timestamp
+    this.username = 'user_' + timestamp
+    this.connection = this.client.connect({ name: this.username });
+    this.createChannel(this.gameName)
+    // Ping other connected clients every 1 sec.
+    this.pinging = setInterval(() => {
+      this.channel.send({type: 'GET_CHANNELS', payload: {}})
+    }, 1000);
+  }
+
+  ngOnDestroy() {
+    if (this.channel) {
+      this.channel.leave();
+      clearInterval(this.pinging);
+    }
   }
 
 }

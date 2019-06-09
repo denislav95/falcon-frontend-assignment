@@ -3,10 +3,10 @@
     <div class="mdl-card mdl-shadow--2dp flc-card-main">
       <div class="flc-layout--center" style="padding: 50px 0;">
         <div class="flc-game-board">
-          <div class="board-col" *ngFor="let rows of board; let i = index" (click)="addPiece(i)">
+          <div class="board-col" *ngFor="let cols of board; let i = index" (click)="addPiece(i)">
             <span
               class="flc-game-piece"
-              *ngFor="let cols of board[i]; let j = index"
+              *ngFor="let rows of board[i]; let j = index"
               [ngClass]="{
                 'winner': board[i][j] === winner,
                 'player-one': board[i][j] === playerOne,
@@ -19,27 +19,39 @@
     </div>
     <div class="mdl-card mdl-shadow--2dp flc-card-aside">
       <div class="flc-game-avatar-group">
-        <span class="flc-game-avatar woman player-one"></span>
+        <span class="flc-game-avatar man" [ngClass]="{ 'player-one': users[0] }"></span>
         <span>
-              Player one <br>
-              <i class="mdl-typography--caption-color-contrast">(you)</i>
+              Player one <span>{{users[0] == this.username ? '(You)' : ''}}</span><br>
+              <i class="mdl-typography--caption-color-contrast">{{ users[0] }}</i>
             </span>
       </div>
       <div class="flc-game-avatar-group">
-        <span class="flc-game-avatar man"></span>
+        <span class="flc-game-avatar man" [ngClass]="{ 'player-two': users[1] }"></span>
         <span>
-              Player two <br>
-              <i class="mdl-typography--caption-color-contrast">(waiting to join)</i>
+              Player two <span>{{users[1] == this.username ? '(You)' : ''}}</span><br>
+              <i class="mdl-typography--caption-color-contrast">{{ users[1] ? users[1] : '(waiting to join)' }}</i>
             </span>
       </div>
-      <div class="mdl-card__actions mdl-card--border">
-        <button onclick="alert('TODO: Implement Start Game route')" class="mdl-button mdl-js-button mdl-button--raised mdl-button--accent mdl-js-ripple-effect">
+      <div class="mdl-card__actions mdl-card--border" *ngIf="!gameStarted">
+        <button (click)="startGame()" [disabled]="users.length < 2" class="mdl-button mdl-js-button mdl-button--raised mdl-button--accent mdl-js-ripple-effect">
           Start game
         </button>
-        <button onclick="alert('TODO: Implement Join Game route')" class="mdl-button mdl-js-button mdl-button--accent mdl-js-ripple-effect">
+        <button (click)="joinGame()" class="mdl-button mdl-js-button mdl-button--accent mdl-js-ripple-effect">
           Join game
         </button>
       </div>
+
+      <div class="mdl-card__actions mdl-card--border" *ngIf="gameStarted">Game has started!</div>
+
+      <dialog #dialog id="dialog" class="mdl-dialog">
+        <h3 class="mdl-dialog__title">Games</h3>
+        <select name="games" id="games" [(ngModel)]="selectedGame">
+          <option value="{{ game }}" *ngFor="let game of games">{{ game }}</option>
+        </select>
+        <div class="mdl-dialog__actions">
+          <button type="button" class="mdl-button" (click)="joinUser()">Join</button>
+        </div>
+      </dialog>
     </div>
   </div>
 </main>

@@ -5,6 +5,10 @@ const CHANNEL_FULL_ERROR = { error: 'CHANNEL_FULL' };
 const CHANNEL_NOT_DEFINED_ERROR = { error: 'CHANNEL_NOT_DEFINED' };
 const JOIN_CHANNEL = 'JOIN_CHANNEL';
 const LEAVE_CHANNEL = 'LEAVE_CHANNEL';
+const GET_CHANNELS = 'GET_CHANNELS';
+const START_GAME = 'START_GAME';
+const CURRENT_PLAYER = 'CURRENT_PLAYER';
+const UPDATE_BOARD = 'UPDATE_BOARD';
 const CHANNELS = new Map();
 
 const server = http.createServer(({ response }) => {
@@ -22,8 +26,22 @@ const WS_SERVER = new WebSocketServer({
 const whitelist = ['http://localhost:4200'];
 const isValidOrigin = origin => whitelist.includes(origin);
 
+const isGetChannelsEvent = message =>
+    (message.type && message.payload && message.type === GET_CHANNELS)
+
+
 const isJoinChannelEvent = message =>
     (message.type && message.payload && message.type === JOIN_CHANNEL)
+
+const isStartGameEvent = message =>
+(message.type && message.payload && message.type === START_GAME)
+
+const isCurrentPlayerEvent = message =>
+(message.type && message.payload && message.type === CURRENT_PLAYER)
+
+const isGameBoardEvent = message =>
+(message.type && message.payload && message.type === UPDATE_BOARD)
+
 
 const isLeaveChannelEvent = message =>
     (message.type && message.type === LEAVE_CHANNEL)
@@ -36,25 +54,28 @@ const leaveChannel = (channelName, connection) => {
     if (error) {
       return connection.send(getError(channelName, error));
     }
+
     channel.connections.delete(connection);
     if (channel.connections.size === 0) {
-      CHANNELS.delete(channel);
+      CHANNELS.delete(channel.name);
     }
 }
 const getChannel = (channelConfig) => {
     if (!CHANNELS.has(channelConfig.name)) {
         CHANNELS.set(channelConfig.name, {
+            users: [],
             connections: new Set(),
             ...channelConfig
         });
     }
     return CHANNELS.get(channelConfig.name);
 };
-const joinChannel = (message, connection) => {
+const joinChannel = (message, connection, username) => {
     let channel = getChannel(message.payload);
     if (channel.connections.size === channel.maxSize) {
         return CHANNEL_FULL_ERROR;
     }
+    channel.users.push(username);
     channel.connections.add(connection);
     return { channel };
 }
@@ -84,20 +105,95 @@ WS_SERVER.on('request', request => {
         const { message, channelName, meta = {} } = JSON.parse(data.utf8Data);
 
         if (isJoinChannelEvent(message)) {
-          let { error } = joinChannel(message, connection);
+          let { error } = joinChannel(message, connection, meta.name);
           if (error) {
               return connection.send(getError(channelName, error));
           }
+        }
+
+        if (isStartGameEvent(message)) {
+          const { error, channel } = getChannelByName(channelName);
+          if (error) {
+            return connection.send(getError(channelName, error));
+          }
+
+          Array.from(channel.connections)
+           .forEach(con => con.send(JSON.stringify({
+              type: START_GAME,
+              message: true,
+              channel: {
+                users: channel.users,
+                size: channel.connections.size,
+                name: channelName
+              }
+            }
+          )));
+        }
+
+        if (isCurrentPlayerEvent(message)) {
+          const { error, channel } = getChannelByName(channelName);
+          if (error) {
+            return connection.send(getError(channelName, error));
+          }
+
+          Array.from(channel.connections)
+            .forEach(con => con.send(JSON.stringify({
+              type: CURRENT_PLAYER,
+              message: { currentPlayer: message.payload.currentPlayer, board: message.payload.board },
+              channel: {
+                users: channel.users,
+                size: channel.connections.size,
+                name: channelName
+              }
+            }
+          )));
+        }
+
+        if (isGameBoardEvent(message)) {
+          const { error, channel } = getChannelByName(channelName);
+          if (error) {
+            return connection.send(getError(channelName, error));
+          }
+
+          Array.from(channel.connections)
+            .forEach(con => con.send(JSON.stringify({
+              type: UPDATE_BOARD,
+              message: { board: message.payload.board },
+              channel: {
+                users: channel.users,
+                size: channel.connections.size,
+                name: channelName
+              }
+            }
+          )));
+        }
+
+        if (isGetChannelsEvent(message)) {
+          const { error, channel } = getChannelByName(channelName);
+          if (error) {
+            return connection.send(getError(channelName, error));
+          }
+          connection.send(JSON.stringify({
+            type: GET_CHANNELS,
+            message: Array.from(CHANNELS.keys()),
+            channel: {
+              users: channel.users,
+              size: channel.connections.size,
+              name: channelName
+            }
+          }))
         }
 
         if (isLeaveChannelEvent(message)) {
           leaveChannel(channelName, connection);
         }
 
+
         const { error, channel } = getChannelByName(channelName);
         if (error) {
           return connection.send(getError(channelName, error));
         }
+
         Array.from(channel.connections)
             .filter(con => con !== connection)
             .forEach(con => con.send(JSON.stringify({
