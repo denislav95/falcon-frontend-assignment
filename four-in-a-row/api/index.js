@@ -86,6 +86,19 @@ const getChannelByName = channelName => {
   }
   return { channel };
 };
+const sendToAllUsers = (channel, channelName, type, message) => {
+  Array.from(channel.connections)
+    .forEach(con => con.send(JSON.stringify({
+      type: type,
+      message: message,
+      channel: {
+        users: channel.users,
+        size: channel.connections.size,
+        name: channelName
+      }
+    }
+  )));
+};
 const getError = (channelName, error) => JSON.stringify({
     channel: { name: channelName },
     ...error
@@ -117,17 +130,7 @@ WS_SERVER.on('request', request => {
             return connection.send(getError(channelName, error));
           }
 
-          Array.from(channel.connections)
-           .forEach(con => con.send(JSON.stringify({
-              type: START_GAME,
-              message: true,
-              channel: {
-                users: channel.users,
-                size: channel.connections.size,
-                name: channelName
-              }
-            }
-          )));
+          sendToAllUsers(channel, channelName, START_GAME, true);
         }
 
         if (isCurrentPlayerEvent(message)) {
@@ -136,17 +139,8 @@ WS_SERVER.on('request', request => {
             return connection.send(getError(channelName, error));
           }
 
-          Array.from(channel.connections)
-            .forEach(con => con.send(JSON.stringify({
-              type: CURRENT_PLAYER,
-              message: { currentPlayer: message.payload.currentPlayer, board: message.payload.board },
-              channel: {
-                users: channel.users,
-                size: channel.connections.size,
-                name: channelName
-              }
-            }
-          )));
+          const messageToSend =  { currentPlayer: message.payload.currentPlayer, board: message.payload.board };
+          sendToAllUsers(channel, channelName, CURRENT_PLAYER, messageToSend);
         }
 
         if (isGameBoardEvent(message)) {
@@ -155,17 +149,8 @@ WS_SERVER.on('request', request => {
             return connection.send(getError(channelName, error));
           }
 
-          Array.from(channel.connections)
-            .forEach(con => con.send(JSON.stringify({
-              type: UPDATE_BOARD,
-              message: { board: message.payload.board },
-              channel: {
-                users: channel.users,
-                size: channel.connections.size,
-                name: channelName
-              }
-            }
-          )));
+          const messageToSend =  { board: message.payload.board };
+          sendToAllUsers(channel, channelName, UPDATE_BOARD, messageToSend);
         }
 
         if (isGetChannelsEvent(message)) {

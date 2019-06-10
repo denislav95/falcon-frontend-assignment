@@ -44,12 +44,16 @@
       <div class="mdl-card__actions mdl-card--border" *ngIf="gameStarted">Game has started!</div>
 
       <dialog #dialog id="dialog" class="mdl-dialog">
-        <h3 class="mdl-dialog__title">Games</h3>
-        <select name="games" id="games" [(ngModel)]="selectedGame">
-          <option value="{{ game }}" *ngFor="let game of games">{{ game }}</option>
-        </select>
-        <div class="mdl-dialog__actions">
-          <button type="button" class="mdl-button" (click)="joinUser()">Join</button>
+        <h4 class="mdl-dialog__title">Select game</h4>
+        <div class="mdl-dialog__content">
+          <select class="mdl-textfield__input" name="games" id="games" [(ngModel)]="selectedGame">
+            <option value="{{ game }}" *ngFor="let game of games">{{ game }}</option>
+          </select>
+
+          <div class="mdl-dialog__actions">
+            <button type="button" class="mdl-button" (click)="dialog.close()">Close</button>
+            <button type="button" class="mdl-button mdl-js-button mdl-button--raised mdl-button--accent mdl-js-ripple-effect" (click)="joinUser()">Join</button>
+          </div>
         </div>
       </dialog>
     </div>
