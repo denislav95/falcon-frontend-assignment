@@ -2,7 +2,7 @@ import {Component, ElementRef, OnDestroy, OnInit, ViewChild} from '@angular/core
 
 import { createClient } from '../../../lib/websocketConnector';
 import { generateMatrixModel, Matrix } from '../../../lib/game-utilities/matrix';
-import { checkFour } from '../../../lib/game-utilities/check-four';
+import { checkFour, isWinner } from '../../../lib/game-utilities/check-four';
 
 @Component({
   selector: 'app-home',
@@ -41,26 +41,29 @@ export class HomeComponent implements OnInit, OnDestroy {
 
       if (this.currentPlayer === this.myPlayer) {
 
-        const row = this.findLastEmptyCell(colIndex);
+        const cell = this.findLastEmptyCell(colIndex);
 
-        const winner = checkFour(this.currentPlayer, this.board, [colIndex, row]);
+        // const winner = checkFour(this.currentPlayer, this.board, [colIndex, cell]);
+
+        if (!this.winner) {
+          this.board[colIndex][cell] = this.currentPlayer;
+        }
+
+        const winner = isWinner(this.board);
 
         if (!winner) {
-          this.board[colIndex][row] = this.currentPlayer;
           this.currentPlayer = this.currentPlayer == this.playerOne ? this.playerTwo : this.playerOne;
-          console.log('============ board =============');
-          console.log(this.board);
-          this.channel.send({type: 'UPDATE_BOARD', payload: { board: this.board }});
+          this.channel.send({type: 'UPDATE_BOARD', payload: { board: this.board, winner: this.winner }});
         } else {
-          this.winner = winner.playerId;
-          alert('Game has ended Player ' + winner.playerId + ' has won!')
+          this.winner = this.currentPlayer;
+          this.channel.send({type: 'UPDATE_BOARD', payload: { board: this.board, winner: this.winner }});
         }
       } else {
         alert('It\'s not your turn!');
       }
 
     } else {
-      alert('Game has not begun yet');
+      alert('Game has not begun yet!');
     }
 
     this.channel.send({type: 'CURRENT_PLAYER', payload: { currentPlayer: this.currentPlayer }});
@@ -69,7 +72,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   findLastEmptyCell(colIndex) {
     const col = this.board[colIndex];
 
-    for (let i = col.length - 1; i >= 0; i--) {
+    for (let i = col.length; i >= 0; i--) {
       const cell = col[i];
       if (cell === 0) {
         return i;
@@ -81,6 +84,13 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   startGame() {
     this.channel.send({type: 'START_GAME', payload: {}});
+  }
+
+  restartGame() {
+    this.board = generateMatrixModel(this.cols, this.rows);
+    this.currentPlayer = this.playerOne;
+    this.winner = 0;
+    this.channel.send({type: 'UPDATE_BOARD', payload: { board: this.board,  winner: -1 }});
   }
 
   createChannel(gameName) {
@@ -105,6 +115,16 @@ export class HomeComponent implements OnInit, OnDestroy {
 
         if (data.type == 'UPDATE_BOARD') {
           this.board = data.message.board;
+
+          if (data.message.winner < 0) {
+            this.winner = 0;
+            return;
+          }
+
+          if (data.message.winner) {
+            this.winner = data.message.winner;
+            this.currentPlayer = data.message.winner;
+          }
         }
 
         if (data.type == 'GET_CHANNELS') {
@@ -136,11 +156,11 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.username = 'user_' + timestamp;
     this.connection = this.client.connect({ name: this.username });
     this.createChannel(this.gameName);
-    // Ping other connected clients every 3 sec.
+    this.channel.send({type: 'GET_CHANNELS', payload: {}})
+    // Ping other connected clients every 5 sec.
     this.pinging = setInterval(() => {
       this.channel.send({type: 'GET_CHANNELS', payload: {}})
-    }, 3000);
-
+    }, 5000);
 
 
   }
@@ -151,5 +171,4 @@ export class HomeComponent implements OnInit, OnDestroy {
       clearInterval(this.pinging);
     }
   }
-
 }

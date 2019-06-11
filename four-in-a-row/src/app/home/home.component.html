@@ -19,14 +19,24 @@
     </div>
     <div class="mdl-card mdl-shadow--2dp flc-card-aside">
       <div class="flc-game-avatar-group">
-        <span class="flc-game-avatar man" [ngClass]="{ 'player-one': users[0] }"></span>
+        <span class="flc-game-avatar man"
+              [ngClass]="{
+                'player-one': users[0],
+                'winner': winner === playerOne,
+                'their-turn': gameStarted && playerOne === currentPlayer
+              }"></span>
         <span>
               Player one <span>{{users[0] == this.username ? '(You)' : ''}}</span><br>
               <i class="mdl-typography--caption-color-contrast">{{ users[0] }}</i>
             </span>
       </div>
       <div class="flc-game-avatar-group">
-        <span class="flc-game-avatar man" [ngClass]="{ 'player-two': users[1] }"></span>
+        <span class="flc-game-avatar man"
+              [ngClass]="{
+                'player-two': users[1],
+                'winner': winner === playerTwo,
+                'their-turn': gameStarted && playerTwo === currentPlayer
+              }"></span>
         <span>
               Player two <span>{{users[1] == this.username ? '(You)' : ''}}</span><br>
               <i class="mdl-typography--caption-color-contrast">{{ users[1] ? users[1] : '(waiting to join)' }}</i>
@@ -41,7 +51,8 @@
         </button>
       </div>
 
-      <div class="mdl-card__actions mdl-card--border" *ngIf="gameStarted">Game has started!</div>
+      <div class="mdl-card__actions mdl-card--border" *ngIf="gameStarted && !winner">Game has started!</div>
+      <div class="mdl-card__actions mdl-card--border" *ngIf="winner"><button class="mdl-button mdl-js-button mdl-button--raised mdl-button--accent mdl-js-ripple-effect" (click)="restartGame()">Restart game!</button></div>
 
       <dialog #dialog id="dialog" class="mdl-dialog">
         <h4 class="mdl-dialog__title">Select game</h4>

@@ -149,7 +149,7 @@ WS_SERVER.on('request', request => {
             return connection.send(getError(channelName, error));
           }
 
-          const messageToSend =  { board: message.payload.board };
+          const messageToSend =  { board: message.payload.board, winner: message.payload.winner };
           sendToAllUsers(channel, channelName, UPDATE_BOARD, messageToSend);
         }
 
