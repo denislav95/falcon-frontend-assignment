@@ -12,7 +12,7 @@ Run `npm start` for a dev server. Navigate to `http://localhost:4200/`. The app 
 
 ## Websocket server
 
-Run `npm ws_api` for a dev websocket server. It will start a websocket server for listening at `http://localhost:4000/`
+Run `npm run ws_api` for a dev websocket server. It will start a websocket server for listening at `http://localhost:4000/`
 
 ## Build
 
