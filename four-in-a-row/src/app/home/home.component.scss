@@ -1,0 +1,36 @@
+@media only screen and (max-width: 991px) {
+  .page-content.flc-layout--center{
+    flex-direction: row;
+    flex-wrap: wrap-reverse;
+  }
+}
+
+
+@media only screen and (max-width: 560px) {
+
+  .page-content.flc-layout--center {
+    width: 100%;
+
+    .flc-layout--center{
+      padding: 15px !important;
+    }
+
+    .mdl-card {
+      min-height: 200px;
+
+      .flc-game-board {
+        height: 300px;
+        width: 100%;
+      }
+
+      .flc-game-board > .board-col {
+        width: 85px;
+      }
+    }
+
+    .flc-game-piece, .flc-game-board > .board-col:before {
+      width: 40px;
+      height: 40px;
+    }
+  }
+}

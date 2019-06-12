@@ -8,7 +8,12 @@
               class="flc-game-piece"
               *ngFor="let rows of board[i]; let j = index"
               [ngClass]="{
-                'winner': board[i][j] === winner,
+                'winner':
+                winner
+                && (pieces[0][0] === i && pieces[0][1] === j
+                || pieces[1][0] === i && pieces[1][1] === j
+                || pieces[2][0] === i && pieces[2][1] === j
+                || pieces[3][0] === i && pieces[3][1] === j),
                 'player-one': board[i][j] === playerOne,
                 'player-two': board[i][j] === playerTwo
               }"

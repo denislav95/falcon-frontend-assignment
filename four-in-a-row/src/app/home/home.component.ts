@@ -2,7 +2,7 @@ import {Component, ElementRef, OnDestroy, OnInit, ViewChild} from '@angular/core
 
 import { createClient } from '../../../lib/websocketConnector';
 import { generateMatrixModel, Matrix } from '../../../lib/game-utilities/matrix';
-import { checkFour, isWinner } from '../../../lib/game-utilities/check-four';
+import { checkFour } from '../../../lib/game-utilities/check-four';
 
 @Component({
   selector: 'app-home',
@@ -32,31 +32,30 @@ export class HomeComponent implements OnInit, OnDestroy {
   private selectedGame: string = '';
   private users: any = [];
   private gameStarted: boolean = false;
+  private pieces: any = [];
 
   constructor() { }
 
   addPiece(colIndex) {
-
     if (this.gameStarted) {
 
       if (this.currentPlayer === this.myPlayer) {
 
         const cell = this.findLastEmptyCell(colIndex);
 
-        // const winner = checkFour(this.currentPlayer, this.board, [colIndex, cell]);
-
         if (!this.winner) {
           this.board[colIndex][cell] = this.currentPlayer;
         }
 
-        const winner = isWinner(this.board);
+        const winner = checkFour(this.currentPlayer, this.board, [colIndex, cell]);
 
         if (!winner) {
           this.currentPlayer = this.currentPlayer == this.playerOne ? this.playerTwo : this.playerOne;
           this.channel.send({type: 'UPDATE_BOARD', payload: { board: this.board, winner: this.winner }});
         } else {
-          this.winner = this.currentPlayer;
-          this.channel.send({type: 'UPDATE_BOARD', payload: { board: this.board, winner: this.winner }});
+          this.winner = winner.playerId;
+          this.pieces = winner.pieces;
+          this.channel.send({type: 'UPDATE_BOARD', payload: { board: this.board, winner: winner.playerId, pieces: winner.pieces }});
         }
       } else {
         alert('It\'s not your turn!');
@@ -122,6 +121,7 @@ export class HomeComponent implements OnInit, OnDestroy {
           }
 
           if (data.message.winner) {
+            this.pieces = data.message.pieces;
             this.winner = data.message.winner;
             this.currentPlayer = data.message.winner;
           }

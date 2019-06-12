@@ -1,5 +1,5 @@
 import { Component, OnInit} from '@angular/core';
-import { ActivatedRoute } from '@angular/router'
+import { ActivatedRoute } from '@angular/router';
 
 @Component({
   selector: 'app-docs',
@@ -7,8 +7,6 @@ import { ActivatedRoute } from '@angular/router'
   styleUrls: ['./docs.component.sass']
 })
 export class DocsComponent implements OnInit {
-
-  private fragment: string;
 
   constructor(private route: ActivatedRoute) {
   }

@@ -32,5 +32,8 @@ Run `npm e2e` to execute the end-to-end tests via [Protractor](http://www.protra
 - Angular 7 installed
 - package.json synchronised with original boilerplate required dependencies
 - websocket server api whitelist changed to http://localhost:4200
+- websocket api new events added - GET_CHANNELS, START_GAME, CURRENT_PLAYER, UPDATE_BOARD
 - lib/styles moved to src/assets
 - static folder moved to src/assets
+- documentation synchronized with Angular 7
+- game logic is in home component 
