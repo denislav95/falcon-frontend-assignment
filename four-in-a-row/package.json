@@ -29,7 +29,7 @@
     "zone.js": "~0.8.26"
   },
   "devDependencies": {
-    "@angular-devkit/build-angular": "~0.13.0",
+    "@angular-devkit/build-angular": "~15.0.0",
     "@angular/cli": "~7.3.3",
     "@angular/compiler-cli": "~7.2.0",
     "@angular/language-service": "~7.2.0",
@@ -52,7 +52,7 @@
     "sinon": "2.1.0",
     "sinon-chai": "2.10.0",
     "style-loader": "0.20.3",
-    "svg-url-loader": "2.3.2",
+    "svg-url-loader": "8.0.0",
     "ts-loader": "4.5.0",
     "codelyzer": "~4.5.0",
     "jasmine-core": "~2.99.1",
