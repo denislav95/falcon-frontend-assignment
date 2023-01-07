@@ -52,7 +52,7 @@
     "sinon": "2.1.0",
     "sinon-chai": "2.10.0",
     "style-loader": "0.20.3",
-    "svg-url-loader": "2.3.2",
+    "svg-url-loader": "2.3.3",
     "ts-loader": "4.5.0",
     "codelyzer": "~4.5.0",
     "jasmine-core": "~2.99.1",
